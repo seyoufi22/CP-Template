@@ -1,0 +1,34 @@
+int mod = 1e9 + 7;
+struct Matrix {
+    int n, m;
+    vector<vector<int>>a;
+    Matrix(){}
+    Matrix(int n, int m) :n(n), m(m) {
+        a = vector<vector<int>>(n, vector<int>(m));
+    }
+    Matrix operator *(const Matrix& other) {
+        Matrix product(this->n, this->m);
+        for(int i = 0; i < this->n; i++)
+            for(int j = 0; j < other.n; j++)
+                for(int k = 0; k < this->m; k++) {
+                    product.a[i][k] += (a[i][j] % mod * (other.a[j][k] % mod)) % mod;
+                    product.a[i][k] %= mod;
+                }
+        return product;
+    }
+};
+
+Matrix binpow(Matrix a, int b, int n, int m) {
+    Matrix result(n, m);
+    for(int i = 0; i < n; i++)
+        result.a[i][i] = 1;
+    while(b) {
+        if (b & 1) {
+            result = result * a;
+        }
+        b >>= 1;
+        a = a * a;
+    }
+    return result;
+}
+
