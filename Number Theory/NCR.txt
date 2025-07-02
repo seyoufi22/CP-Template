@@ -1,0 +1,27 @@
+const ll mod = 1e9 + 7, inf = 2e18, N = 2e6 + 5, M = 1e5 + 5, LG = 23, P1 = 37, P2 = 31;
+ 
+ll fact[N], modinv[N];
+ 
+ll fastpow(ll n, ll m) {
+    ll ret = 1;
+    while (m) {
+        if (m & 1)
+            (ret *= n) %= mod;
+        (n *= n) %= mod;
+        m /= 2;
+    }
+    return ret;
+}
+ 
+void pre() {
+    fact[0] = 1;
+    for (int i = 1; i < N; i++)
+        fact[i] = i * fact[i - 1] % mod;
+    modinv[N - 1] = fastpow(fact[N - 1], mod - 2);
+    for (int i = N - 2; i >= 0; i--)
+        modinv[i] = (i + 1) * modinv[i + 1] % mod;
+}
+ 
+ll ncr(int n, int r) {
+    return fact[n] * modinv[n - r] % mod * modinv[r] % mod;
+}
