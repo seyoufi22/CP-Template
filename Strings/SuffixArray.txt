@@ -1,0 +1,84 @@
+struct SuffixArray {
+    vector<int> suf, order, newOrder, lcp, logs;
+    vector<vector<int> > table;
+    vector<int> s;
+    int n;
+ 
+    SuffixArray(const vector<int> &_s) : s(_s) {
+        s.push_back(-1);
+        n = s.size();
+        suf = order = newOrder = vector<int>(n); {
+            vector<pair<int, int> > temp;
+            for (int i = 0; i < n; i++) temp.emplace_back(s[i], i);
+            sort(all(temp));
+            for (int i = 0; i < n; i++) suf[i] = temp[i].second;
+            order[suf[0]] = 0;
+            for (int i = 1; i < n; i++)
+                order[suf[i]] = order[suf[i - 1]] + (temp[i].first != temp[i - 1].first);
+        }
+        auto getOrder = [&](const int &a) -> int {
+            return (a < n) ? order[a] : 0;
+        };
+        auto radix_sort = [&](const int &len) -> void {
+            vector<int> f(n + 1, 0), new_suf(n);
+            for (int i = 0; i < n; i++) f[getOrder(suf[i] + len)]++;
+            for (int i = 1; i <= n; i++) f[i] += f[i - 1];
+            for (int i = n - 1; i >= 0; i--) new_suf[--f[getOrder(suf[i] + len)]] = suf[i];
+            suf = new_suf;
+        };
+ 
+        for (int len = 1; ; len <<= 1) {
+            auto comp = [&](const int &a, const int &b) -> bool {
+                if (order[a] != order[b]) return order[a] < order[b];
+                return getOrder(a + len) < getOrder(b + len);
+            };
+            for (int i = 0; i < n; i++) {
+                suf[i] -= len;
+                if (suf[i] < 0) suf[i] += n;
+            }
+            radix_sort(len);
+            radix_sort(0);
+            newOrder[suf[0]] = 0;
+            for (int i = 1; i < n; i++)
+                newOrder[suf[i]] = newOrder[suf[i - 1]] + comp(suf[i - 1], suf[i]);
+            order.swap(newOrder);
+            if (order[suf.back()] == n - 1) break;
+        }
+        buildLCP();
+    }
+ 
+    void buildLCP() {
+        vector<int> rank(n, 0);
+        for (int i = 0; i < n; i++) rank[suf[i]] = i;
+ 
+        int k = 0;
+        lcp.assign(n - 1, 0);
+        for (int i = 0; i < n; i++) {
+            if (rank[i] == n - 1) {
+                k = 0;
+                continue;
+            }
+            int j = suf[rank[i] + 1];
+            while (i + k < n && j + k < n && s[i + k] == s[j + k]) k++;
+            lcp[rank[i]] = k;
+            if (k) k--;
+        }
+    }
+ 
+    void buildSparseTable() {
+        int n = lcp.size();
+        table = vector<vector<int> >(n + 1, vector<int>(log2(n) + 1));
+        for (int i = 0; i < n; i++)
+            table[i][0] = lcp[i];
+        for (int j = 1; (1 << j) <= n; j++) {
+            for (int i = 0; (i + (1 << j) - 1) < n; i++) {
+                table[i][j] = min(table[i][j - 1], table[i + (1 << (j - 1))][j - 1]);
+            }
+        }
+    }
+ 
+    int query(int L, int R) {
+        int j = (int) log2(R - L + 1);
+        return min(table[L][j], table[R - (1 << j) + 1][j]);
+    }
+};
